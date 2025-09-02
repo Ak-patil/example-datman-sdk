@@ -1,3 +1,4 @@
+import * as Clipboard from 'expo-clipboard';
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -44,6 +45,7 @@ export default function App() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
   const [lastResult, setLastResult] = useState('—');
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
 
   const cart = useMemo(() => MENU.filter(x => selected[x.id]), [selected]);
   const total = useMemo(() => cart.reduce((s, i) => s + i.price, 0), [cart]);
@@ -56,7 +58,7 @@ export default function App() {
       setBusy(true);
 
       // 1) Create session
-      const { sessionId } = await createSession(total);
+      const { sessionId, orderId } = await createSession(total);
 
       // 2) Configure SDK with this session
       await init.configure(sessionId);
@@ -64,6 +66,7 @@ export default function App() {
       // 3) Open the native sheet which will use that session
       const res = await init.open();
 
+      setLastOrderId(orderId);
       setLastResult(JSON.stringify(res, null, 2));
       if (res.status === 'success') {
         Alert.alert('Payment successful', 'Thanks for your order! 🎉');
@@ -78,6 +81,12 @@ export default function App() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function copyOrderId() {
+    if (!lastOrderId) return;
+    await Clipboard.setStringAsync(lastOrderId);
+    Alert.alert('Copied', 'Order ID copied to clipboard');
   }
 
   return (
@@ -116,6 +125,13 @@ export default function App() {
       </View>
 
       <View style={S.result}>
+        <Text style={S.resultT}>Order ID</Text>
+        <View style={S.resultRow}>
+          <Text style={S.resultV} selectable>{lastOrderId ?? '—'}</Text>
+          <Pressable onPress={copyOrderId} disabled={!lastOrderId} style={[S.copyBtn, !lastOrderId && S.copyBtnDis]}>
+            <Text style={S.copyBtnText}>Copy</Text>
+          </Pressable>
+        </View>
         <Text style={S.resultT}>Last result</Text>
         <Text style={S.resultV} selectable>{lastResult}</Text>
       </View>
@@ -123,7 +139,7 @@ export default function App() {
   );
 }
 
-async function createSession(totalMajor: number): Promise<{ sessionId: string; expiresAt?: number }> {
+async function createSession(totalMajor: number): Promise<{ sessionId: string; orderId: string; expiresAt?: number }> {
   const orderId = String(Date.now());
   const payload = {
     host: 'example.com',
@@ -169,7 +185,7 @@ async function createSession(totalMajor: number): Promise<{ sessionId: string; e
   const expiresAt: number | undefined = json?.expiresAt ?? json?.data?.expiresAt;
   if (!sessionId) throw new Error('No sessionId in response');
 
-  return { sessionId, expiresAt };
+  return { sessionId, orderId, expiresAt };
 }
 
 const S = StyleSheet.create({
@@ -197,4 +213,8 @@ const S = StyleSheet.create({
   result: { backgroundColor: '#F3F4F6', margin: 16, padding: 12, borderRadius: 12 },
   resultT: { fontSize: 12, color: '#6B7280', marginBottom: 6 },
   resultV: { fontFamily: 'Courier', color: '#111827' },
+  resultRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  copyBtn: { backgroundColor: '#0A84FF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  copyBtnDis: { backgroundColor: '#A7C7FF' },
+  copyBtnText: { color: 'white', fontWeight: '700' },
 }); 
