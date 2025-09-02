@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert, FlatList,
-    Pressable,
-    SafeAreaView, StatusBar, StyleSheet, Text, View,
+  ActivityIndicator,
+  Alert, FlatList,
+  Pressable,
+  SafeAreaView, StatusBar, StyleSheet, Text, View,
 } from 'react-native';
 import init from 'react-native-datman-checkout-sdk';
 
@@ -70,6 +70,8 @@ export default function App() {
         setSelected({});
       } else if (res.status === 'failed') {
         Alert.alert('Payment failed', res.message || 'Please try again');
+      }else if (res.status === 'cancelled') {
+        Alert.alert('Payment cancelled', res.message || 'Please try again');
       }
     } catch (e: any) {
       Alert.alert('Checkout error', String(e?.message ?? e));
