@@ -10,7 +10,8 @@ import init from 'react-native-datman-checkout-sdk';
 
 const WS5_BASE = 'https://ws5-payments.datmanpay.com';
 const CREATE_SESSION_API_KEY = 'dat_h33h3jjnh424hj233h24h2j2hhn';
-const MERCHANT_ID = 1234569;
+// const MERCHANT_ID = 1234569;
+const MERCHANT_ID = '1235000'; //3DS test merchant
 const PROVIDER = 'FH';
 const CURRENCY = 'GBP';
 
